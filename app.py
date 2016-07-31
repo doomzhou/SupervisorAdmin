@@ -9,25 +9,18 @@
 
 
 from flask import Flask, url_for, render_template, send_from_directory\
-        ,request, redirect
+        ,request, redirect, session
 from handler import *
 
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = CONFIGS['SecretKey']
 
 
 @app.route('/favicon.ico')
 def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static'),
         'favicon.ico', mimetype='image/vnd.microsoft.icon')
-
-
-@app.route('/api/auth', methods=["POST"])
-def apiauth():
-    if ApiAuth(request.json):
-        return "0"
-    else:
-        return "1"
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -39,17 +32,22 @@ def login():
     return render_template('login.html', result = {})
 
 
+@app.route('/logout')
+@require_api_token
+def loginout():
+    session.pop('token', None)
+    return redirect(url_for("login"))
+
+
 @app.route('/')
-def indext():
-    return render_template('index.html')
-
-
 @app.route('/index')
+@require_api_token
 def index():
     return render_template('index.html')
 
 
 @app.route('/<pagename>')
+@require_api_token
 def admin(pagename):
     return render_template(pagename+'.html')
 
