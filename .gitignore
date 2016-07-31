@@ -1,0 +1,5 @@
+/*.csv
+/*.out
+/*.txt
+__pycache__/
+config.yaml
