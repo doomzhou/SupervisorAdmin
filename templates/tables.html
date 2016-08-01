@@ -1,4 +1,4 @@
-{% extends "base_layout.html" %} {% block title %}Tables{% endblock %} 
+{% extends "base_layout.html" %} {% block title %}{% if title is defined %} {{ title }}{% else %} Tables {% endif %}{% endblock %} 
 {% block head %}
     {{ super() }}
     <link rel="stylesheet" href="{{ url_for('serveStaticResource', resource='css/responsive.dataTables.min.css') }}">
@@ -19,35 +19,47 @@
                     <table class="table table-striped table-bordered table-hover" id="dataTables-example">
                         <thead>
                             <tr>
-                                <th>Rendering engine</th>
-                                <th>Browser</th>
-                                <th>Platform(s)</th>
-                                <th>Engine version</th>
-                                <th>CSS grade</th>
+                                {% if field is defined %}
+                                    <th>ID</th>
+                                    {% for i in field %}
+                                    <th>{{ i }}</th>
+                                    {% endfor %}
+                                {% else %}
+                                    <th>Rendering engine</th>
+                                    <th>Browser</th>
+                                    <th>Platform(s)</th>
+                                    <th>Engine version</th>
+                                    <th>CSS grade</th>
+                                {% endif %}
                             </tr>
                         </thead>
                         <tbody>
-                            <tr class="odd gradeX">
-                                <td>Trident</td>
-                                <td>Internet Explorer 4.0</td>
-                                <td>Win 95+</td>
-                                <td class="center">4</td>
-                                <td class="center">X</td>
-                            </tr>
-                            <tr class="gradeC">
-                                <td>Misc</td>
-                                <td>PSP browser</td>
-                                <td>PSP</td>
-                                <td class="center">-</td>
-                                <td class="center">C</td>
-                            </tr>
-                            <tr class="gradeU">
-                                <td>Other browsers</td>
-                                <td>All others</td>
-                                <td>-</td>
-                                <td class="center">-</td>
-                                <td class="center">U</td>
-                            </tr>
+                            {% if result is defined %}
+                                {% for v in result %}
+                                <tr class="odd gradeX">
+                                    <td>{{ loop.index0 + 1 }}</td>
+                                    {% for i in field %}
+                                        {% if v[i] == "RUNNING" %}
+                                        <td class="success">{{v[i]}}</td>
+                                        {% elif v[i] == "STOP" %}
+                                        <td class="warning">{{v[i]}}</td>
+                                        {% elif v[i] == "EXITED" %}
+                                        <td class="danger">{{v[i]}}</td>
+                                        {% else %}
+                                        <td>{{v[i]}}</td>
+                                        {% endif %}
+                                    {% endfor %}
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr class="odd gradeX">
+                                    <td>Trident</td>
+                                    <td>Internet Explorer 4.0</td>
+                                    <td>Win 95+</td>
+                                    <td class="center">4</td>
+                                    <td class="center">X</td>
+                                </tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>

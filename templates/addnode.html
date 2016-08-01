@@ -1,0 +1,47 @@
+{% extends "base_layout.html" %} {% block title %}Addnode{% endblock %} 
+{% block content %}
+{% if result is defined %}
+<div class="alert alert-info alert-dismissable">
+    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+    {{ result['msgs'] }}
+</div>
+{% endif %}
+<div class="row">
+    <div class="col-lg-12">
+        <h1 class="page-header">新增节点</h1>
+    </div>
+</div>
+<div class="row">
+    <div class="col-lg-12">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                目前仅支持http RPC2, 用户名密码可选
+            </div>
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-lg-6">
+                        <form action="addnode" method="POST" role="form" class="form-horizontal">
+                            <div class="form-group">
+                                <label class="control-label col-xs-1">http://</label>
+                                <div class="col-xs-4">
+                                    <input id="userpass" name="userpass" class="form-control" placeholder="user:password">
+                                </div>
+                                <label class="control-label col-xs-1">@</label>
+                                <div class="col-xs-4">
+                                    <input id="hostport" name="hostport" class="form-control col-xs-2" placeholder="host:port">
+                                </div>
+                                <label class="control-label col-xs-2">/RPC2</label>
+                            </div>
+                            <div><label id="connectstr" class="control-label"> </label></div>
+                            <input class="btn btn-info" value="Connect test">
+                            <input type="submit" class="btn btn-default disabled" disabled="disabled" value="Add">
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

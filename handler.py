@@ -13,8 +13,11 @@ from flask import Flask, url_for, render_template, send_from_directory\
         ,request, redirect, session
 from itsdangerous import (TimedJSONWebSignatureSerializer
     as Serializer, BadSignature, SignatureExpired)
+from datetime import datetime
 import os, re, sys, time
 import redis, yaml
+import xmlrpc.client
+import ast
 
 
 with open('config.yaml') as f:
@@ -43,7 +46,6 @@ def require_api_token(func):
         s = Serializer(CONFIGS['SecretKey'])
         try:
             data = s.loads(session['token'])
-            print(data)
         except SignatureExpired:
             data = "expired" # valid token, but expired
             return render_template('login.html', result = {"code": 1, "msgs": "SignatureExpired"})
@@ -79,6 +81,88 @@ def Login(req):
         result = {"code": 1, "msgs": "U&P nil"}
     return result
 
+
+def RpcConnectTest(connectstr):
+    with xmlrpc.client.ServerProxy(connectstr) as proxy:
+        try:
+            proxy.system.listMethods()
+            return "0"
+        except Exception as e:
+            print(e)
+            return str(e)
+
+
+def AddNode(req, inact="active"):
+    conn, dbprefix = RedisConn()
+    keyname = "%snodelist" % dbprefix
+    result = {"code": 1, "msgs": "None"}
+    value = []
+    if conn.exists(keyname):
+        # origin value
+        value = ast.literal_eval(conn.get(keyname).decode())
+        # remove duplicate hostport
+        value = [x for x in value if x['hostport'] != req['hostport']]
+        # update newest to value
+        value.append({"userpass": req['userpass'], "hostport": req["hostport"],
+            "status": inact, "createtime": datetime.strftime(datetime.now(), '%D %T')})
+        result = {"code": 0, "msgs": "%s exists updated it" % req['hostport']}
+    else:
+        value.append({"userpass": req['userpass'], "hostport": req["hostport"],
+            "status": inact, "createtime": datetime.strftime(datetime.now(), '%D %T')})
+        result = {"code": 0, "msgs": "%s Added" % req['hostport']}
+    try:
+        conn.set(keyname, value)
+    except:
+        result = {"code": 1, "msgs": "Unknown error"}
+    return result
+
+
+def NodesList(inact):
+    conn, dbprefix = RedisConn()
+    keyname = "%snodelist" % dbprefix
+    result = {"code": 1, "msgs": "None"}
+    value = []
+    if conn.exists(keyname):
+        value = ast.literal_eval(conn.get(keyname).decode())
+    return value
+
+
+def ProgramsList(inact):
+    conn, dbprefix = RedisConn()
+    keyname = "%snodelist" % dbprefix
+    result = {"code": 1, "msgs": "None"}
+    value = []
+    if conn.exists(keyname):
+        nodeslist = ast.literal_eval(conn.get(keyname).decode())
+        for i in nodeslist:
+            connectstr = "http://%s@%s/RPC2" % (i['userpass'], i['hostport'])
+            # 如果连接成功的话,进行Programslist解析
+            if RpcConnectTest(connectstr) == "0":
+                # real values with Programslist
+                result = AddNode(i, "active")
+                with  xmlrpc.client.ServerProxy(connectstr) as proxy:
+                    try:
+                        allprocesslist = proxy.supervisor.getAllProcessInfo()
+                        # add node info
+                        [x.update({"nodes": i["hostport"]}) for x in allprocesslist]
+                        value += allprocesslist
+                    except Exception as e:
+                        pass
+            else:
+                result = AddNode(i, "inactive")
+    return value
+
+
+def Index():
+    nodeslist = NodesList("e")
+    FailedNodes = [x for x in nodeslist if x['status'] == "inactive"]
+    programslist = ProgramsList("e")
+    FailedProgrames = [x for x in programslist if x['statename'] != "RUNNING"]
+    result = {"code": 1, "msgs": "None"}
+    value = {"Programes": len(programslist), "FailedProgrames": len(FailedProgrames),
+            "Nodes": len(nodeslist), "FailedNodes": len(FailedNodes)}
+
+    return programslist, value
 
 if __name__ == '__main__':
     pass

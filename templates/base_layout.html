@@ -32,7 +32,7 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                <a class="navbar-brand" href="index">SupervisorAdmin</a>
+                <a class="navbar-brand" href="/index">SupervisorAdmin</a>
             </div>
             <!-- /.navbar-header -->
             <ul class="nav navbar-top-links navbar-right">
@@ -43,8 +43,10 @@
                     <ul class="dropdown-menu dropdown-user">
                         <li><a href="#"><i class="fa fa-user fa-fw"></i> User invite</a>
                         </li>
+                        <li><a href="#"><i class="fa fa-key fa-fw"></i> Change password</a>
+                        </li>
                         <li class="divider"></li>
-                        <li><a href="logout"><i class="fa fa-sign-out fa-fw"></i> Logout</a>
+                        <li><a href="/logout"><i class="fa fa-sign-out fa-fw"></i> Logout</a>
                         </li>
                     </ul>
                     <!-- /.dropdown-user -->
@@ -67,13 +69,16 @@
                             <!-- /input-group -->
                         </li>
                         <li>
-                            <a href="index"><i class="fa fa-dashboard fa-fw"></i> Dashboard</a>
+                            <a href="/index"><i class="fa fa-dashboard fa-fw"></i> Dashboard</a>
                         </li>
                         <li>
-                            <a href="tables"><i class="fa fa-list-ol fa-fw"></i> Node list</a>
+                            <a href="/nodeslist/e"><i class="fa fa-tasks fa-fw"></i> Node list</a>
                         </li>
                         <li>
-                            <a href="tables"><i class="fa fa-gears fa-fw"></i> Add Node</a>
+                            <a href="/programslist/e"some valuo><i class="fa fa-flash fa-fw"></i>Programes list</a>
+                        </li>
+                        <li>
+                            <a href="/addnode"><i class="fa fa-gears fa-fw"></i> Add Node</a>
                         </li>
                     </ul>
                 </div>
@@ -100,5 +105,37 @@
     <script src="{{ url_for('serveStaticResource', resource='js/sb-admin-2.js')}}"></script>
     {% endblock %}
 </body>
+
+<script>
+$(document).ready(function() {
+    $(".alert").fadeTo(1000, 500).slideUp(1000, function(){
+        $(".alert").alert('close');
+    });
+    $("#userpass,#hostport").keyup(function () {
+        var val1 = $("#userpass").val();
+        var val2 = $("#hostport").val();
+        if ( val1 != "" ) { val1 = val1 + "@" };
+        $("#connectstr").text("http://" + val1 + val2 + "/RPC2");
+    })
+    $(".btn.btn-info").click(function (){
+        $.ajax({
+            type: "POST",
+            url: "/rpcconnecttest",
+            data: JSON.stringify({"connectstr": $("#connectstr").text()}),
+            success: function(data){
+                if ( data == 0 ){
+                    $(".btn.btn-info").val('连接成功');
+                    $(".btn.btn-default.disabled").prop('disabled', false);
+                    $(".btn.btn-default.disabled").addClass('btn-success').removeClass('disabled');
+                } else {
+                    console.log(data);
+                    $(".btn.btn-info").val('连接失败');
+                }
+            },
+            contentType: "application/json"
+        })
+    })
+});
+</script>
 
 </html>

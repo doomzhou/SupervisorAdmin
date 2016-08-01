@@ -43,7 +43,59 @@ def loginout():
 @app.route('/index')
 @require_api_token
 def index():
-    return render_template('index.html')
+    result = {}
+    field = ["statename", "description", "name"]
+    programslist, result = Index()
+    pdict = {}
+    pkeys = []
+    for i in programslist:
+        node = i['nodes']
+        if node in pdict:
+            pdict[node].append(i)
+        else:
+            pdict[node] = [i]
+        pass
+    pkeys = pdict.keys()
+    return render_template('index.html', field = field, result = result,
+        pdict = pdict, pkeys = pkeys)
+
+
+@app.route('/nodeslist/<inact>')
+@require_api_token
+def nodeslist(inact):
+    result = NodesList(inact)
+    field = ["hostport", "status", "createtime"]
+    panelheading = "节点列表"
+    return render_template('tables.html', result = result, field = field,
+            panelheading = panelheading, title = 'NodesList')
+
+
+@app.route('/programslist/<inact>')
+@require_api_token
+@require_api_token
+def programslist(inact):
+    panelheading = "进程列表"
+    result = ProgramsList(inact)
+    field = ["name", "nodes", "description", "statename"]
+    return render_template('tables.html', result = result, field = field,
+            panelheading = panelheading, title = 'ProgramsList')
+
+
+@app.route('/addnode', methods=["POST"])
+@require_api_token
+@require_api_token
+def addnode():
+    result = {"code": 1, "msgs": "None"}
+    if request.method == "POST":
+        result = AddNode(request.form)
+        return render_template('addnode.html', result = result)
+    return render_template('addnode.html', result = result)
+
+
+@app.route('/rpcconnecttest', methods=["POST"])
+@require_api_token
+def rpcconnecttest():
+    return RpcConnectTest(request.json['connectstr'])
 
 
 @app.route('/<pagename>')

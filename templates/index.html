@@ -2,24 +2,47 @@
 {% block head %}
     {{ super() }}
     <link rel="stylesheet" href="{{ url_for('serveStaticResource', resource='css/timeline.css') }}">
-    <link rel="stylesheet" href="{{ url_for('serveStaticResource', resource='css/morris.css') }}">
+    <link rel="stylesheet" href="{{ url_for('serveStaticResource', resource='css/responsive.dataTables.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('serveStaticResource', resource='css/dataTables.bootstrap.css') }}">
 {% endblock %} 
 {% block content %}
 <div class="row">
     <div class="col-lg-3 col-md-6">
-        <div class="panel panel-primary">
+        <div class="panel panel-green">
             <div class="panel-heading">
                 <div class="row">
                     <div class="col-xs-3">
-                        <i class="fa fa-comments fa-5x"></i>
+                        <i class="fa fa-flash fa-5x"></i>
                     </div>
                     <div class="col-xs-9 text-right">
-                        <div class="huge">26</div>
-                        <div>New Comments!</div>
+                        <div class="huge">{{ result['Programes'] }}</div>
+                        <div>Programes</div>
                     </div>
                 </div>
             </div>
-            <a href="#">
+            <a href="programslist/e">
+                <div class="panel-footer">
+                    <span class="pull-left">View Details</span>
+                    <span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span>
+                    <div class="clearfix"></div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="panel panel-yellow">
+            <div class="panel-heading">
+                <div class="row">
+                    <div class="col-xs-3">
+                        <i class="fa fa-support fa-5x"></i>
+                    </div>
+                    <div class="col-xs-9 text-right">
+                        <div class="huge">{{ result['FailedProgrames'] }}</div>
+                        <div>Failed Programes</div>
+                    </div>
+                </div>
+            </div>
+            <a href="programslist/inact">
                 <div class="panel-footer">
                     <span class="pull-left">View Details</span>
                     <span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span>
@@ -36,12 +59,12 @@
                         <i class="fa fa-tasks fa-5x"></i>
                     </div>
                     <div class="col-xs-9 text-right">
-                        <div class="huge">12</div>
-                        <div>New Tasks!</div>
+                        <div class="huge">{{ result['Nodes'] }}</div>
+                        <div>Nodes</div>
                     </div>
                 </div>
             </div>
-            <a href="#">
+            <a href="nodeslist/e">
                 <div class="panel-footer">
                     <span class="pull-left">View Details</span>
                     <span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span>
@@ -55,37 +78,15 @@
             <div class="panel-heading">
                 <div class="row">
                     <div class="col-xs-3">
-                        <i class="fa fa-shopping-cart fa-5x"></i>
-                    </div>
-                    <div class="col-xs-9 text-right">
-                        <div class="huge">124</div>
-                        <div>New Orders!</div>
-                    </div>
-                </div>
-            </div>
-            <a href="#">
-                <div class="panel-footer">
-                    <span class="pull-left">View Details</span>
-                    <span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span>
-                    <div class="clearfix"></div>
-                </div>
-            </a>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6">
-        <div class="panel panel-red">
-            <div class="panel-heading">
-                <div class="row">
-                    <div class="col-xs-3">
                         <i class="fa fa-support fa-5x"></i>
                     </div>
                     <div class="col-xs-9 text-right">
-                        <div class="huge">13</div>
-                        <div>Support Tickets!</div>
+                        <div class="huge">{{ result['FailedNodes'] }}</div>
+                        <div>Disconnect Nodes</div>
                     </div>
                 </div>
             </div>
-            <a href="#">
+            <a href="nodeslist/inact">
                 <div class="panel-footer">
                     <span class="pull-left">View Details</span>
                     <span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span>
@@ -95,10 +96,84 @@
         </div>
     </div>
 </div>
+<div class="row">
+    <div class="col-lg-12">
+        <div class="panel panel-default">
+            {% if panelheading is defined %}
+            <div class="panel-heading">
+                {{ panelheading }}
+            </div>
+            {% endif %}
+            <!-- /.panel-heading -->
+            <div class="panel-body">
+                <div class="dataTable_wrapper">
+                    <table class="table table-striped table-bordered table-hover" id="dataTables-example">
+                        <thead>
+                            <tr>
+                                {% if field is defined %}
+                                    {% for i in field %}
+                                    <th>{{ i }}</th>
+                                    {% endfor %}
+                                {% endif %}
+                                    <th>action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if pkeys is defined %}
+                                {% for v in pkeys %}
+                                    <tr class="info">
+                                        <td><b>{{v}}</b></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                    </tr>
+                                    {% for i in pdict[v] %}
+                                        <tr class="odd gradeX">
+                                        {% for j in field %}
+                                            {% if i[j] == "RUNNING" %}
+                                            <td class="success">{{i[j]}}</td>
+                                            {% elif i[j] == "STOP" %}
+                                            <td class="warning">{{i[j]}}</td>
+                                            {% elif i[j] == "EXITED" %}
+                                            <td class="danger">{{i[j]}}</td>
+                                            {% else %}
+                                            <td> {{ i[j] }}</td>
+                                            {% endif %}
+                                        {% endfor %}
+                                            <td>
+                                                {% if i["statename"] == "RUNNING" %}
+                                                <a class="btn btn-xs">restart</a>
+                                                {% endif %}
+                                                <a class="btn btn-xs">stop</a>
+                                                <a class="btn btn-xs">clear log</a>
+                                                <a class="btn btn-xs">Tail -f</a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                {% endfor %}
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- /.panel-body -->
+        </div>
+        <!-- /.panel -->
+    </div>
+    <!-- /.col-lg-12 -->
+</div>
 <!-- /.row -->{% endblock %}
 {% block js %}
     {{ super() }}
     <script src="{{ url_for('serveStaticResource', resource='js/raphael-min.js')}}"></script>
-    <script src="{{ url_for('serveStaticResource', resource='js/morris.min.js')}}"></script>
-    <script src="{{ url_for('serveStaticResource', resource='js/morris-data.js')}}"></script>
+    <script src="{{ url_for('serveStaticResource', resource='js/jquery.dataTables.min.js')}}"></script>
+    <script src="{{ url_for('serveStaticResource', resource='js/dataTables.bootstrap.min.js')}}"></script>
+<script>
+$(document).ready(function() {
+    $('#dataTables-example').DataTable({
+        responsive: true,
+        "order": []
+    });
+});
+</script>
 {% endblock %}
