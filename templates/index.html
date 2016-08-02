@@ -142,11 +142,13 @@
                                         {% endfor %}
                                             <td>
                                                 {% if i["statename"] == "RUNNING" %}
-                                                <a class="btn btn-xs">restart</a>
+                                                <a alinkact="restart" alinkname={{i["name"]}} alinknode={{v}} class="btn btn-xs">restart</a>
+                                                <a alinkact="stop" alinkname={{i["name"]}} alinknode={{v}} class="btn btn-xs">stop</a>
+                                                {% elif i["statename"] == "STOPPED" %}
+                                                <a alinkact="start" alinkname={{i["name"]}} alinknode={{v}} class="btn btn-xs">start</a>
                                                 {% endif %}
-                                                <a class="btn btn-xs">stop</a>
-                                                <a class="btn btn-xs">clear log</a>
-                                                <a class="btn btn-xs">Tail -f</a>
+                                                <a alinkact="clear" alinkname={{i["name"]}} alinknode={{v}} class="btn btn-xs">clear log</a>
+                                                <a alinkact="tail" alinkname={{i["name"]}} alinknode={{v}} class="btn btn-xs">Tail -f</a>
                                             </td>
                                         </tr>
                                     {% endfor %}
@@ -155,6 +157,17 @@
                         </tbody>
                     </table>
                 </div>
+                <!-- modal start -->
+                <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content">
+                            <div class="modal-body">
+                                <div class="modal-display" style="background-color: lightgray"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- modal end -->
             </div>
             <!-- /.panel-body -->
         </div>
@@ -173,6 +186,15 @@ $(document).ready(function() {
     $('#dataTables-example').DataTable({
         responsive: true,
         "order": []
+    });
+    $('.table').on('click', '.btn', function(){
+        var alinkact = $(this).attr('alinkact');
+        var alinknode = $(this).attr('alinknode');
+        var alinkname = $(this).attr('alinkname');
+        var url = "/action?action=" + alinkact + "&node=" + alinknode + "&name=" + alinkname
+        $('.modal-display').html(url + "loading ...");
+        $('.modal-display').load(url);
+        $('#myModal').modal();
     });
 });
 </script>

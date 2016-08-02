@@ -41,9 +41,9 @@
                         <i class="fa fa-user fa-fw"></i> <i class="fa fa-caret-down"></i>
                     </a>
                     <ul class="dropdown-menu dropdown-user">
-                        <li><a href="#"><i class="fa fa-user fa-fw"></i> User invite</a>
+                        <li><a href="/userinvite"><i class="fa fa-user fa-fw"></i> User invite</a>
                         </li>
-                        <li><a href="#"><i class="fa fa-key fa-fw"></i> Change password</a>
+                        <li><a href="/chpass"><i class="fa fa-key fa-fw"></i> Change password</a>
                         </li>
                         <li class="divider"></li>
                         <li><a href="/logout"><i class="fa fa-sign-out fa-fw"></i> Logout</a>
@@ -109,13 +109,26 @@
 <script>
 $(document).ready(function() {
     $(".alert").fadeTo(1000, 500).slideUp(1000, function(){
-        $(".alert").alert('close');
+        //$(".alert").alert('close');
+        $(".alert").hide();
     });
     $("#userpass,#hostport").keyup(function () {
         var val1 = $("#userpass").val();
         var val2 = $("#hostport").val();
         if ( val1 != "" ) { val1 = val1 + "@" };
         $("#connectstr").text("http://" + val1 + val2 + "/RPC2");
+    })
+    $("#userinvite").click(function (){
+        $.ajax({
+            type: "POST",
+            url: "/userinvite",
+            data: JSON.stringify({"email": $("#useremail").val()}),
+            success: function(data){
+                $(".alert").toggle();
+                $(".msgs").html(data);
+            },
+            contentType: "application/json"
+        })
     })
     $(".btn.btn-info").click(function (){
         $.ajax({

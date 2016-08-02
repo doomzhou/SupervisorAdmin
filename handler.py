@@ -18,6 +18,8 @@ import os, re, sys, time
 import redis, yaml
 import xmlrpc.client
 import ast
+#custom module
+from myemail import mailsender
 
 
 with open('config.yaml') as f:
@@ -32,8 +34,8 @@ def RedisConn():
     return conn, DBPrefix
 
 
-def Generate_auth_token(email):
-    s = Serializer(CONFIGS['SecretKey'], expires_in = CONFIGS['Token_expire'])
+def Generate_auth_token(email, secondkey=''):
+    s = Serializer("%s%s" % (CONFIGS['SecretKey'], secondkey), expires_in = CONFIGS['Token_expire'])
     return s.dumps(email)
 
 
@@ -66,9 +68,21 @@ def require_api_token(func):
 def Login(req):
     result = {"code": 0, "msgs": "None"}
     conn, dbprefix = RedisConn()
-    if req['email'] and req['password']:
-        if conn.hget('%suser' % dbprefix, req['email']):
-            if req['password'] == conn.hget('%suser' % dbprefix, req['email']).decode():
+    keyname = "%suser" % dbprefix
+    if 'password1' in req and 'verify' in req:
+        result = UserInvite(req['email'], req['verify'])
+        if result['code'] == 2 and req['password1'] == req['password2']:
+            if req['email'] in [x.decode() for x in conn.hkeys(keyname)]:
+                conn.hset(keyname, req['email'], req['password1'])
+                result = {"code": 2, "msgs": "密码已经更新"}
+            else:
+                conn.hset(keyname, req['email'], req['password1'])
+                result = {"code": 2, "msgs": "密码已经设置"}
+        else:
+            result = {"code": 1, "msgs": "verifycode 不正确或者前后密码不一致"}
+    elif 'password' in req and 'email' in req:
+        if conn.hget(keyname, req['email']):
+            if req['password'] == conn.hget(keyname, req['email']).decode():
                 token = Generate_auth_token(req['email']).decode()
                 session['token'] = token
                 session['user'] = req['email']
@@ -140,7 +154,7 @@ def ProgramsList(inact):
             if RpcConnectTest(connectstr) == "0":
                 # real values with Programslist
                 result = AddNode(i, "active")
-                with  xmlrpc.client.ServerProxy(connectstr) as proxy:
+                with xmlrpc.client.ServerProxy(connectstr) as proxy:
                     try:
                         allprocesslist = proxy.supervisor.getAllProcessInfo()
                         # add node info
@@ -161,8 +175,90 @@ def Index():
     result = {"code": 1, "msgs": "None"}
     value = {"Programes": len(programslist), "FailedProgrames": len(FailedProgrames),
             "Nodes": len(nodeslist), "FailedNodes": len(FailedNodes)}
-
     return programslist, value
+
+
+def UserInvite(email, verify=""):
+    result = {"code": 1, "msgs": "None"}
+    if verify != "":
+        s = Serializer("%s%s" % (CONFIGS['SecretKey'], "verifykey"))
+        data = None
+        try:
+            data = s.loads(verify)
+        except SignatureExpired:
+            result = {"code": 1, "msgs": "SignatureExpired"}
+        except BadSignature:
+            result = {"code": 1, "msgs": "BadSignature"}
+        except Exception as e:
+            print(e)
+            result = {"code": 1, "msgs": "验证不通过"}
+        if data == email:
+            result = {"code": 2, "msgs": "验证通过, 请设置密码", "email": email, "verifycode": verify}
+        else:
+            result = {"code": 1, "msgs": "签名失效或未知错误"}
+    else:
+        mailfrom = CONFIGS['Email']['From']
+        mailfrompass = CONFIGS['Email']['Pass']
+        smtpser = CONFIGS['Email']['Smtpser']
+        smtpport = CONFIGS['Email']['Smtpport']
+        if not re.match('[^@]+@[^@]+\.[^@]+', email):
+            result = {"code": 1, "msgs": "Email address invalid"}
+        else:
+            try:
+                verifycode = Generate_auth_token(email, 'verifykey').decode()
+                mailcontent = "请点击激活帐号. %suserverify?verifycode=%s&email=%s" % (request.url_root, verifycode, email)
+                mailsender(mailfrom, mailfrompass, smtpser, smtpport, email, mailcontent)
+                result = {"code": 0, "msgs": "Mail sended"}
+            except Exception as e:
+                result = {"code": 1, "msgs": e}
+    return result
+
+
+def Action(req):
+    conn, dbprefix = RedisConn()
+    keyname = "%snodelist" % dbprefix
+    result = {"code": 1, "msgs": "None"}
+    value = []
+    act = req.get('action')
+    node = req.get('node')
+    name = req.get('name')
+
+    value = ast.literal_eval(conn.get(keyname).decode())
+    value = [x for x in value if x['hostport'] == node][0]
+    connectstr = "http://%s@%s/RPC2" % (value['userpass'], value['hostport'])
+
+    with xmlrpc.client.ServerProxy(connectstr) as proxy:
+        try:
+            if act == "clear":
+                if proxy.supervisor.clearProcessLogs(name):
+                    result = {"code": 0, "msgs": "%s %s Success" % (name, act)}
+                else:
+                    result = {"code": 1, "msgs": "%s %s Failed" % (name, act)}
+            elif act == "restart":
+                if proxy.supervisor.stopProcess(name) and proxy.supervisor.startProcess(name):
+                    result = {"code": 0, "msgs": "%s %s Success" % (name, act)}
+                else:
+                    result = {"code": 1, "msgs": "%s %s Failed" % (name, act)}
+            elif act == "stop":
+                if proxy.supervisor.stopProcess(name):
+                    result = {"code": 0, "msgs": "%s %s Success" % (name, act)}
+                else:
+                    result = {"code": 1, "msgs": "%s %s Failed" % (name, act)}
+            elif act == "start":
+                if proxy.supervisor.startProcess(name):
+                    result = {"code": 0, "msgs": "%s %s Success" % (name, act)}
+                else:
+                    result = {"code": 1, "msgs": "%s %s Failed" % (name, act)}
+            elif act == "tail":
+                offset = proxy.supervisor.tailProcessStdoutLog(name, 0, 1)[1]
+                length = 1000
+                res = proxy.supervisor.tailProcessStdoutLog(name, offset - length , length)[0]
+                result = {"code": 0, "msgs": res}
+        except Exception as e:
+            print(e)
+
+    return result
+
 
 if __name__ == '__main__':
     pass

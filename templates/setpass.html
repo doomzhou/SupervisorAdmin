@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    {% block head %}
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="Allenh">
+    <title>{% block title %}Set Password{% endblock %}- Admin Panel</title>
+    <link rel="stylesheet" href="{{ url_for('serveStaticResource', resource='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('serveStaticResource', resource='css/sb-admin-2.css') }}">
+    <link rel="stylesheet" href="{{ url_for('serveStaticResource', resource='css/font-awesome.min.css') }}">
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+    <script src="js/html5shiv.min.js"></script>
+    <script src="js/respond.min.js"></script>
+    <![endif]-->
+    {% endblock %}
+</head>
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-4 col-md-offset-4">
+            <div class="login-panel panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Please Set Your Password</h3>
+                </div>
+                <div class="panel-body">
+                    <form role="form" action="/login" method="post">
+                        <fieldset>
+                            <div class="form-group">
+                                <input class="form-control" placeholder="********" name="password1" type="password" value="">
+                            </div>
+                            <div class="form-group">
+                                <input class="form-control" placeholder="********" name="password2" type="password" value="">
+                            </div>
+                            <div class="form-group">
+                                <input class="form-control" placeholder="********" name="email" type="hidden" value={{ result['email'] }}>
+                            </div>
+                            <div class="form-group">
+                                <input class="form-control" placeholder="********" name="verify" type="hidden" value={{ result['verifycode'] }}>
+                            </div>
+                            {% if result['msgs']: %}
+                            <div class="alert alert-info alert-dismissable">
+                                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                                {{ result['msgs'] }}
+                            </div>
+                            {% endif %}
+                            <input type="submit" class="btn btn-lg btn-info btn-block" value="Next">
+                        </fieldset>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+    {% block js %}
+    <script src="{{ url_for('serveStaticResource', resource='js/jquery.min.js')}}"></script>
+    <script src="{{ url_for('serveStaticResource', resource='js/bootstrap.min.js')}}"></script>
+    <script src="{{ url_for('serveStaticResource', resource='js/metisMenu.min.js')}}"></script>
+    <script src="{{ url_for('serveStaticResource', resource='js/sb-admin-2.js')}}"></script>
+    {% endblock %}
+
+<script>
+$(document).ready(function() {
+    $(".alert").fadeTo(1000, 500).slideUp(1000, function(){
+        $(".alert").alert('close');
+    });
+});
+</script>
+
+</html>

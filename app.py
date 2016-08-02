@@ -25,9 +25,10 @@ def favicon():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
+    if request.method == "POST":
         user = request.form['email']
         result = Login(request.form)
+        print(result)
         return render_template('login.html', result = result, user = user)
     return render_template('login.html', result = {})
 
@@ -72,7 +73,6 @@ def nodeslist(inact):
 
 @app.route('/programslist/<inact>')
 @require_api_token
-@require_api_token
 def programslist(inact):
     panelheading = "进程列表"
     result = ProgramsList(inact)
@@ -82,7 +82,6 @@ def programslist(inact):
 
 
 @app.route('/addnode', methods=["POST"])
-@require_api_token
 @require_api_token
 def addnode():
     result = {"code": 1, "msgs": "None"}
@@ -98,10 +97,51 @@ def rpcconnecttest():
     return RpcConnectTest(request.json['connectstr'])
 
 
+@app.route('/userinvite', methods=["GET", "POST"])
+@require_api_token
+def userinvite():
+    result = {}
+    if request.method == "POST":
+        result = UserInvite(request.json['email'])
+        return str(result)
+    return render_template('userinvite.html', result = result)
+
+
 @app.route('/<pagename>')
 @require_api_token
 def admin(pagename):
     return render_template(pagename+'.html')
+
+
+@app.route('/chpass')
+@require_api_token
+def chpass():
+    if "user" in session:
+        verifycode = Generate_auth_token(session["user"], 'verifykey').decode()
+        result = {"code": 2, "msgs": "请重新设置密码", "email": session["user"], "verifycode": verifycode}
+    return render_template('setpass.html', result = result)
+
+
+@app.route('/action')
+@require_api_token
+def action():
+    result = {}
+    result = Action(request.args)
+    return result['msgs'].replace('\n', '<br>')
+
+
+#############################above 需要验证 below 不需要验证#####################
+
+
+@app.route('/userverify')
+def userverify():
+    result = {}
+    if request.args.get('verifycode') and request.args.get('email'):
+        result = UserInvite(request.args.get('email'), request.args.get('verifycode'))
+    if result['code'] == 2:
+        return render_template('setpass.html', result = result)
+    else:
+        return render_template('login.html', result = result)
 
 
 @app.route('/<path:resource>')
