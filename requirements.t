@@ -1,3 +1,3 @@
 Flask
 redis
-yaml
+pyyaml
