@@ -13,7 +13,9 @@ Intro
 
 
 `git clone https://github.com/doomzhou/SupervisorAdmin.git`
+
 `cd SupervisorAdmin`
+
 `pip install -r requirements.t`
 
 
@@ -47,6 +49,7 @@ Intro
 ## 初始化登录 ##
 
 user: admin@g.cn
+
 password: admin
 
 #####另:请及时修改密码
