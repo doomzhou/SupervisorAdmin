@@ -44,7 +44,8 @@ def require_api_token(func):
     def check_token(*args, **kwargs):
         # Check to see if it's in their session
         if 'token' not in session:
-            return render_template('login.html', result = {"code": 1, "msgs": "Access denied"})
+            return redirect(url_for('login'))
+            # return render_template('login.html', result = {"code": 1, "msgs": "Access denied"})
         s = Serializer(CONFIGS['SecretKey'])
         try:
             data = s.loads(session['token'])

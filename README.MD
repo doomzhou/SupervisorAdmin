@@ -7,7 +7,7 @@ Intro
 * Python3+
 * Flask
 * redis
-* yaml
+* pyyaml
 
 ## 部署代码,安装依赖 ##
 
