@@ -1,0 +1,17 @@
+AppDebugOption : False
+Host           : 0.0.0.0
+Port           : 5001
+Redis:
+    Host: 127.0.0.1
+    Port: 6379
+    Auth: redisauthkey
+DBPrefix: prefix
+SecretKey: wtfsecret
+Token_expire: 3600
+
+## mail server for userinvite
+Email:
+    From: noreply@g.cn
+    Pass: noreply'spassword
+    Smtpser: smtp.exmail.qq.com
+    Smtpport: 465

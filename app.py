@@ -25,12 +25,19 @@ def favicon():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    result = {}
     if request.method == "POST":
         user = request.form['email']
         result = Login(request.form)
-        print(result)
         return render_template('login.html', result = result, user = user)
-    return render_template('login.html', result = {})
+
+    # add user init
+    conn, dbprefix = RedisConn()
+    keyname = "%suser" % dbprefix
+    if not conn.exists(keyname):
+        conn.hset(keyname, "admin@g.cn", "admin")
+        result = {"code": 0, "msgs": "管理员用户初始化完成，请用admin@g.cn admin 登录"}
+    return render_template('login.html', result = result)
 
 
 @app.route('/logout')
